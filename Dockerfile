@@ -26,11 +26,11 @@ WORKDIR /app
 # Copy published files from build stage
 COPY --from=build /app/publish .
 
-# Expose ports (5000 for local, 8080 for Render)
-EXPOSE 5000 8080
+# Expose port (Render uses PORT=10000 by default)
+EXPOSE 10000
 
 # Set environment variables
-ENV ASPNETCORE_URLS=http://+:5000
+ENV ASPNETCORE_URLS=http://+:10000
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 # Run the application as non-root user
