@@ -6,7 +6,7 @@ GraphQL API for managing CV/resume data
 
 ## Deploy Commands
 
-### Docker
+### Local (Docker)
 ```bash
 docker-compose up          # Start
 docker-compose down        # Stop

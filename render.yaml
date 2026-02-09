@@ -1,0 +1,40 @@
+services:
+  # ASP.NET Core API
+  - type: web
+    name: cvbackend-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://+:8080
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: cvbackend-db
+          property: connectionString
+      - key: Cache__EnableCaching
+        value: true
+      - key: Cache__ExpirationMinutes
+        value: 10
+      - key: RateLimit__EnableRateLimiting
+        value: false
+      - key: RateLimit__PermitLimit
+        value: 100
+      - key: RateLimit__Window
+        value: 60
+      - key: Serilog__FilePath
+        value: logs/cvbackend-.log
+      - key: Serilog__RollingInterval
+        value: Day
+    healthCheckPath: /health
+
+databases:
+  - name: cvbackend-db
+    databaseName: cvbackend
+    user: cvuser
+    plan: free
+    region: frankfurt

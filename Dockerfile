@@ -26,8 +26,8 @@ WORKDIR /app
 # Copy published files from build stage
 COPY --from=build /app/publish .
 
-# Expose port 5000
-EXPOSE 5000
+# Expose ports (5000 for local, 8080 for Render)
+EXPOSE 5000 8080
 
 # Set environment variables
 ENV ASPNETCORE_URLS=http://+:5000
