@@ -3,6 +3,8 @@ using CVBackend.Shared.Models;
 using CVBackend.Shared.Models.Enums;
 using CVBackend.Shared.Queries.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace CVBackend.Core.Queries.Implementations;
@@ -10,30 +12,49 @@ namespace CVBackend.Core.Queries.Implementations;
 /// <summary>
 /// Implementation of education-related queries.
 /// </summary>
-public class EducationQuery : IEducationQuery
+public class EducationQuery : BaseQuery, IEducationQuery
 {
-    private readonly CvDbContext _context;
-    private readonly ILogger<EducationQuery> _logger;
-
     /// <summary>
     /// Initializes a new instance of the EducationQuery class.
     /// </summary>
     /// <param name="context">The database context.</param>
     /// <param name="logger">The logger instance.</param>
-    public EducationQuery(CvDbContext context, ILogger<EducationQuery> logger)
+    /// <param name="cache">The memory cache instance.</param>
+    /// <param name="configuration">The configuration instance.</param>
+    public EducationQuery(CvDbContext context, ILogger<EducationQuery> logger, IMemoryCache cache, IConfiguration configuration)
+        : base(context, logger, cache, configuration)
     {
-        _context = context;
-        _logger = logger;
     }
 
     /// <inheritdoc />
     public async Task<List<Education>> GetAllAsync()
     {
-        _logger.LogInformation("Fetching all education entries");
+        string cacheKey = "education_all";
+
+        if (_cachingEnabled && _cache.TryGetValue(cacheKey, out List<Education>? cachedEducation))
+        {
+            _logger.LogInformation("Cache hit - returning {Count} cached education entries", cachedEducation!.Count);
+            return cachedEducation;
+        }
+
+        _logger.LogInformation("Cache miss - fetching all education entries from database");
         List<Education> education = await _context.Education
             .OrderBy(e => e.Institution)
             .ToListAsync();
-        _logger.LogInformation("Retrieved {Count} education entries", education.Count);
+
+        if (_cachingEnabled)
+        {
+            MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_cacheExpirationMinutes)
+            };
+            _cache.Set(cacheKey, education, cacheOptions);
+            _logger.LogInformation("Cached {Count} education entries for {Minutes} minutes", education.Count, _cacheExpirationMinutes);
+            return education;
+        }
+
+        _logger.LogInformation("Retrieved {Count} education entries (caching disabled)", education.Count);
+
         return education;
     }
 

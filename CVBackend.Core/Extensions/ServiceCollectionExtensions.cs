@@ -64,6 +64,8 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IDbSeeder, DbSeeder>();
 
+        services.AddMemoryCache();
+
         services.AddScoped<ICompanyQuery, CompanyQuery>();
         services.AddScoped<IProjectQuery, ProjectQuery>();
         services.AddScoped<IEducationQuery, EducationQuery>();

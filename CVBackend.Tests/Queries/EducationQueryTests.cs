@@ -1,6 +1,8 @@
 using CVBackend.Core.Queries.Implementations;
 using CVBackend.Shared.Models;
 using CVBackend.Shared.Models.Enums;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CVBackend.Tests.Queries;
@@ -14,7 +16,21 @@ public class EducationQueryTests : QueryTestBase
 
     public EducationQueryTests()
     {
-        _educationQuery = new EducationQuery(Context, NullLogger<EducationQuery>.Instance);
+        _educationQuery = new EducationQuery(Context, NullLogger<EducationQuery>.Instance, Cache, Configuration);
+    }
+
+    private EducationQuery CreateEducationQueryWithCachingEnabled()
+    {
+        Dictionary<string, string?> configValues = new Dictionary<string, string?>
+        {
+            { "Cache:EnableCaching", "true" },
+            { "Cache:ExpirationMinutes", "10" }
+        };
+        IConfiguration cacheEnabledConfig = new ConfigurationBuilder()
+            .AddInMemoryCollection(configValues)
+            .Build();
+
+        return new EducationQuery(Context, NullLogger<EducationQuery>.Instance, Cache, cacheEnabledConfig);
     }
 
     [Fact]
@@ -174,6 +190,48 @@ public class EducationQueryTests : QueryTestBase
         Assert.Equal(2, result.Count);
         Assert.Equal("Advanced Tech Institute", result[0].Institution); // A comes before T
         Assert.Equal("Tech Academy", result[1].Institution);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithCachingEnabled_CachesResultsOnFirstCall()
+    {
+        EducationQuery cachedQuery = CreateEducationQueryWithCachingEnabled();
+        SeedEducation();
+
+        List<Education> firstResult = await cachedQuery.GetAllAsync();
+        List<Education> secondResult = await cachedQuery.GetAllAsync();
+
+        Assert.NotNull(firstResult);
+        Assert.NotNull(secondResult);
+        Assert.Equal(3, firstResult.Count);
+        Assert.Equal(3, secondResult.Count);
+        Assert.Equal(firstResult[0].Institution, secondResult[0].Institution);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithCachingEnabled_ReturnsCachedDataOnSubsequentCalls()
+    {
+        EducationQuery cachedQuery = CreateEducationQueryWithCachingEnabled();
+        SeedEducation();
+
+        List<Education> firstResult = await cachedQuery.GetAllAsync();
+
+        Context.Education.Add(new Education
+        {
+            Id = Guid.NewGuid(),
+            Institution = "Yale University",
+            Degree = Enum_DegreeType.Master,
+            Field = "Software Engineering",
+            StartDate = new DateTime(2024, 1, 1),
+            EndDate = null,
+            Description = "New education added after cache"
+        });
+        Context.SaveChanges();
+
+        List<Education> secondResult = await cachedQuery.GetAllAsync();
+
+        Assert.Equal(3, firstResult.Count);
+        Assert.Equal(3, secondResult.Count);
     }
 
 }

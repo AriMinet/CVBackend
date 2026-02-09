@@ -42,6 +42,8 @@ dotnet test              # Run all tests
 - **GraphQL:** HotChocolate 15.1.12
 - **Database:** PostgreSQL 17
 - **ORM:** Entity Framework Core 9.0.2
+- **Caching:** In-Memory Cache (IMemoryCache)
+- **Logging:** Serilog (Console + File)
 - **Testing:** xUnit + WebApplicationFactory
 - **Containerization:** Docker & Docker Compose
 

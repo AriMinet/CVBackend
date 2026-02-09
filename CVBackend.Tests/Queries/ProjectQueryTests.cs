@@ -1,5 +1,7 @@
 using CVBackend.Core.Queries.Implementations;
 using CVBackend.Shared.Models;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CVBackend.Tests.Queries;
@@ -13,7 +15,21 @@ public class ProjectQueryTests : QueryTestBase
 
     public ProjectQueryTests()
     {
-        _projectQuery = new ProjectQuery(Context, NullLogger<ProjectQuery>.Instance);
+        _projectQuery = new ProjectQuery(Context, NullLogger<ProjectQuery>.Instance, Cache, Configuration);
+    }
+
+    private ProjectQuery CreateProjectQueryWithCachingEnabled()
+    {
+        Dictionary<string, string?> configValues = new Dictionary<string, string?>
+        {
+            { "Cache:EnableCaching", "true" },
+            { "Cache:ExpirationMinutes", "10" }
+        };
+        IConfiguration cacheEnabledConfig = new ConfigurationBuilder()
+            .AddInMemoryCollection(configValues)
+            .Build();
+
+        return new ProjectQuery(Context, NullLogger<ProjectQuery>.Instance, Cache, cacheEnabledConfig);
     }
 
     [Fact]
@@ -248,5 +264,90 @@ public class ProjectQueryTests : QueryTestBase
 
         Assert.NotNull(result);
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithCachingEnabled_CachesResultsOnFirstCall()
+    {
+        ProjectQuery cachedQuery = CreateProjectQueryWithCachingEnabled();
+        SeedProjects();
+
+        List<Project> firstResult = await cachedQuery.GetAllAsync();
+        List<Project> secondResult = await cachedQuery.GetAllAsync();
+
+        Assert.NotNull(firstResult);
+        Assert.NotNull(secondResult);
+        Assert.Equal(3, firstResult.Count);
+        Assert.Equal(3, secondResult.Count);
+        Assert.Equal(firstResult[0].Name, secondResult[0].Name);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithCachingEnabled_ReturnsCachedDataOnSubsequentCalls()
+    {
+        ProjectQuery cachedQuery = CreateProjectQueryWithCachingEnabled();
+        SeedProjects();
+
+        List<Project> firstResult = await cachedQuery.GetAllAsync();
+
+        Context.Projects.Add(new Project
+        {
+            Id = Guid.NewGuid(),
+            Name = "Project Zeta",
+            CompanyId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            Description = "New project added after cache",
+            Technologies = "New Tech",
+            StartDate = new DateTime(2024, 1, 1),
+            EndDate = null
+        });
+        Context.SaveChanges();
+
+        List<Project> secondResult = await cachedQuery.GetAllAsync();
+
+        Assert.Equal(3, firstResult.Count);
+        Assert.Equal(3, secondResult.Count);
+    }
+
+    [Fact]
+    public async Task GetAllWithRelationsAsync_WithCachingEnabled_CachesResultsOnFirstCall()
+    {
+        ProjectQuery cachedQuery = CreateProjectQueryWithCachingEnabled();
+        SeedProjects();
+
+        List<Project> firstResult = await cachedQuery.GetAllWithRelationsAsync();
+        List<Project> secondResult = await cachedQuery.GetAllWithRelationsAsync();
+
+        Assert.NotNull(firstResult);
+        Assert.NotNull(secondResult);
+        Assert.Equal(3, firstResult.Count);
+        Assert.Equal(3, secondResult.Count);
+        Assert.NotNull(firstResult[0].Company);
+        Assert.NotNull(secondResult[0].Company);
+    }
+
+    [Fact]
+    public async Task GetAllWithRelationsAsync_WithCachingEnabled_ReturnsCachedDataOnSubsequentCalls()
+    {
+        ProjectQuery cachedQuery = CreateProjectQueryWithCachingEnabled();
+        SeedProjects();
+
+        List<Project> firstResult = await cachedQuery.GetAllWithRelationsAsync();
+
+        Context.Projects.Add(new Project
+        {
+            Id = Guid.NewGuid(),
+            Name = "Project Zeta",
+            CompanyId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            Description = "New project added after cache",
+            Technologies = "New Tech",
+            StartDate = new DateTime(2024, 1, 1),
+            EndDate = null
+        });
+        Context.SaveChanges();
+
+        List<Project> secondResult = await cachedQuery.GetAllWithRelationsAsync();
+
+        Assert.Equal(3, firstResult.Count);
+        Assert.Equal(3, secondResult.Count);
     }
 }

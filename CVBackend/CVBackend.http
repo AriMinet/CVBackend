@@ -29,6 +29,20 @@ Content-Type: application/json
 
 ###
 
+### GraphQL - Get Companies with Pagination
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetCompaniesPaged($first: Int!, $after: String) { companiesPaged(first: $first, after: $after) { edges { cursor node { id name position startDate endDate description } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } }",
+  "variables": {
+    "first": 10,
+    "after": null
+  }
+}
+
+###
+
 ### GraphQL - Get Companies with Projects
 POST {{CVBackend_HostAddress}}/graphql
 Content-Type: application/json
@@ -45,6 +59,20 @@ Content-Type: application/json
 
 {
   "query": "{ skills { id name category proficiencyLevel yearsExperience } }"
+}
+
+###
+
+### GraphQL - Get Skills with Pagination
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetSkillsPaged($first: Int!, $after: String) { skillsPaged(first: $first, after: $after) { edges { cursor node { id name category proficiencyLevel yearsExperience } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } }",
+  "variables": {
+    "first": 10,
+    "after": null
+  }
 }
 
 ###
@@ -95,6 +123,20 @@ Content-Type: application/json
 
 ###
 
+### GraphQL - Get Education with Pagination
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetEducationPaged($first: Int!, $after: String) { educationPaged(first: $first, after: $after) { edges { cursor node { id institution degree field startDate endDate description } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } }",
+  "variables": {
+    "first": 10,
+    "after": null
+  }
+}
+
+###
+
 ### GraphQL - Get Education by ID
 POST {{CVBackend_HostAddress}}/graphql
 Content-Type: application/json
@@ -140,6 +182,20 @@ Content-Type: application/json
 
 {
   "query": "{ projects { id name description technologies startDate endDate } }"
+}
+
+###
+
+### GraphQL - Get Projects with Pagination
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetProjectsPaged($first: Int!, $after: String) { projectsPaged(first: $first, after: $after) { edges { cursor node { id name description technologies startDate endDate } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } }",
+  "variables": {
+    "first": 10,
+    "after": null
+  }
 }
 
 ###

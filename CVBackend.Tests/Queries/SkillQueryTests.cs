@@ -1,6 +1,8 @@
 using CVBackend.Core.Queries.Implementations;
 using CVBackend.Shared.Models;
 using CVBackend.Shared.Models.Enums;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CVBackend.Tests.Queries;
@@ -14,7 +16,21 @@ public class SkillQueryTests : QueryTestBase
 
     public SkillQueryTests()
     {
-        _skillQuery = new SkillQuery(Context, NullLogger<SkillQuery>.Instance);
+        _skillQuery = new SkillQuery(Context, NullLogger<SkillQuery>.Instance, Cache, Configuration);
+    }
+
+    private SkillQuery CreateSkillQueryWithCachingEnabled()
+    {
+        Dictionary<string, string?> configValues = new Dictionary<string, string?>
+        {
+            { "Cache:EnableCaching", "true" },
+            { "Cache:ExpirationMinutes", "10" }
+        };
+        IConfiguration cacheEnabledConfig = new ConfigurationBuilder()
+            .AddInMemoryCollection(configValues)
+            .Build();
+
+        return new SkillQuery(Context, NullLogger<SkillQuery>.Instance, Cache, cacheEnabledConfig);
     }
 
     [Fact]
@@ -315,5 +331,86 @@ public class SkillQueryTests : QueryTestBase
 
         Assert.NotNull(result);
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithCachingEnabled_CachesResultsOnFirstCall()
+    {
+        SkillQuery cachedQuery = CreateSkillQueryWithCachingEnabled();
+        SeedSkills();
+
+        List<Skill> firstResult = await cachedQuery.GetAllAsync();
+        List<Skill> secondResult = await cachedQuery.GetAllAsync();
+
+        Assert.NotNull(firstResult);
+        Assert.NotNull(secondResult);
+        Assert.Equal(4, firstResult.Count);
+        Assert.Equal(4, secondResult.Count);
+        Assert.Equal(firstResult[0].Name, secondResult[0].Name);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithCachingEnabled_ReturnsCachedDataOnSubsequentCalls()
+    {
+        SkillQuery cachedQuery = CreateSkillQueryWithCachingEnabled();
+        SeedSkills();
+
+        List<Skill> firstResult = await cachedQuery.GetAllAsync();
+
+        Context.Skills.Add(new Skill
+        {
+            Id = Guid.NewGuid(),
+            Name = "Rust",
+            Category = "Backend",
+            ProficiencyLevel = Enum_ProficiencyLevel.Beginner,
+            YearsExperience = 1
+        });
+        Context.SaveChanges();
+
+        List<Skill> secondResult = await cachedQuery.GetAllAsync();
+
+        Assert.Equal(4, firstResult.Count);
+        Assert.Equal(4, secondResult.Count);
+    }
+
+    [Fact]
+    public async Task GetAllWithProjectsAsync_WithCachingEnabled_CachesResultsOnFirstCall()
+    {
+        SkillQuery cachedQuery = CreateSkillQueryWithCachingEnabled();
+        SeedSkills();
+
+        List<Skill> firstResult = await cachedQuery.GetAllWithProjectsAsync();
+        List<Skill> secondResult = await cachedQuery.GetAllWithProjectsAsync();
+
+        Assert.NotNull(firstResult);
+        Assert.NotNull(secondResult);
+        Assert.Equal(4, firstResult.Count);
+        Assert.Equal(4, secondResult.Count);
+        Assert.NotNull(firstResult[0].Projects);
+        Assert.NotNull(secondResult[0].Projects);
+    }
+
+    [Fact]
+    public async Task GetAllWithProjectsAsync_WithCachingEnabled_ReturnsCachedDataOnSubsequentCalls()
+    {
+        SkillQuery cachedQuery = CreateSkillQueryWithCachingEnabled();
+        SeedSkills();
+
+        List<Skill> firstResult = await cachedQuery.GetAllWithProjectsAsync();
+
+        Context.Skills.Add(new Skill
+        {
+            Id = Guid.NewGuid(),
+            Name = "Rust",
+            Category = "Backend",
+            ProficiencyLevel = Enum_ProficiencyLevel.Beginner,
+            YearsExperience = 1
+        });
+        Context.SaveChanges();
+
+        List<Skill> secondResult = await cachedQuery.GetAllWithProjectsAsync();
+
+        Assert.Equal(4, firstResult.Count);
+        Assert.Equal(4, secondResult.Count);
     }
 }

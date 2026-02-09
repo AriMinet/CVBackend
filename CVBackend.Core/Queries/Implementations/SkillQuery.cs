@@ -3,6 +3,8 @@ using CVBackend.Shared.Models;
 using CVBackend.Shared.Models.Enums;
 using CVBackend.Shared.Queries.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace CVBackend.Core.Queries.Implementations;
@@ -10,31 +12,50 @@ namespace CVBackend.Core.Queries.Implementations;
 /// <summary>
 /// Implementation of skill-related queries.
 /// </summary>
-public class SkillQuery : ISkillQuery
+public class SkillQuery : BaseQuery, ISkillQuery
 {
-    private readonly CvDbContext _context;
-    private readonly ILogger<SkillQuery> _logger;
-
     /// <summary>
     /// Initializes a new instance of the SkillQuery class.
     /// </summary>
     /// <param name="context">The database context.</param>
     /// <param name="logger">The logger instance.</param>
-    public SkillQuery(CvDbContext context, ILogger<SkillQuery> logger)
+    /// <param name="cache">The memory cache instance.</param>
+    /// <param name="configuration">The configuration instance.</param>
+    public SkillQuery(CvDbContext context, ILogger<SkillQuery> logger, IMemoryCache cache, IConfiguration configuration)
+        : base(context, logger, cache, configuration)
     {
-        _context = context;
-        _logger = logger;
     }
 
     /// <inheritdoc />
     public async Task<List<Skill>> GetAllAsync()
     {
-        _logger.LogInformation("Fetching all skills");
+        string cacheKey = "skills_all";
+
+        if (_cachingEnabled && _cache.TryGetValue(cacheKey, out List<Skill>? cachedSkills))
+        {
+            _logger.LogInformation("Cache hit - returning {Count} cached skills", cachedSkills!.Count);
+            return cachedSkills;
+        }
+
+        _logger.LogInformation("Cache miss - fetching all skills from database");
         List<Skill> skills = await _context.Skills
             .OrderBy(s => s.Category)
             .ThenBy(s => s.Name)
             .ToListAsync();
-        _logger.LogInformation("Retrieved {Count} skills", skills.Count);
+
+        if (_cachingEnabled)
+        {
+            MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_cacheExpirationMinutes)
+            };
+            _cache.Set(cacheKey, skills, cacheOptions);
+            _logger.LogInformation("Cached {Count} skills for {Minutes} minutes", skills.Count, _cacheExpirationMinutes);
+            return skills;
+        }
+
+        _logger.LogInformation("Retrieved {Count} skills (caching disabled)", skills.Count);
+
         return skills;
     }
 
@@ -76,13 +97,34 @@ public class SkillQuery : ISkillQuery
     /// <inheritdoc />
     public async Task<List<Skill>> GetAllWithProjectsAsync()
     {
-        _logger.LogInformation("Fetching all skills with projects");
+        string cacheKey = "skills_all_with_projects";
+
+        if (_cachingEnabled && _cache.TryGetValue(cacheKey, out List<Skill>? cachedSkills))
+        {
+            _logger.LogInformation("Cache hit - returning {Count} cached skills with projects", cachedSkills!.Count);
+            return cachedSkills;
+        }
+
+        _logger.LogInformation("Cache miss - fetching all skills with projects from database");
         List<Skill> skills = await _context.Skills
             .Include(s => s.Projects)
             .OrderBy(s => s.Category)
             .ThenBy(s => s.Name)
             .ToListAsync();
-        _logger.LogInformation("Retrieved {Count} skills with projects", skills.Count);
+
+        if (_cachingEnabled)
+        {
+            MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_cacheExpirationMinutes)
+            };
+            _cache.Set(cacheKey, skills, cacheOptions);
+            _logger.LogInformation("Cached {Count} skills with projects for {Minutes} minutes", skills.Count, _cacheExpirationMinutes);
+            return skills;
+        }
+
+        _logger.LogInformation("Retrieved {Count} skills with projects (caching disabled)", skills.Count);
+
         return skills;
     }
 

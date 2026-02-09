@@ -3,6 +3,8 @@ using CVBackend.Shared.Models;
 using CVBackend.Shared.Models.Enums;
 using CVBackend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -15,6 +17,8 @@ public abstract class QueryTestBase : IDisposable
 {
     protected CvDbContext Context { get; }
     protected ILoggerFactory LoggerFactory { get; }
+    protected IMemoryCache Cache { get; }
+    protected IConfiguration Configuration { get; }
 
     protected QueryTestBase()
     {
@@ -24,6 +28,15 @@ public abstract class QueryTestBase : IDisposable
 
         Context = new CvDbContext(options);
         LoggerFactory = NullLoggerFactory.Instance;
+        Cache = new MemoryCache(new MemoryCacheOptions());
+
+        Dictionary<string, string?> configValues = new Dictionary<string, string?>
+        {
+            { "Cache:EnableCaching", "false" }
+        };
+        Configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configValues)
+            .Build();
     }
 
     /// <summary>

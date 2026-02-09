@@ -1,5 +1,7 @@
 using CVBackend.Core.Queries.Implementations;
 using CVBackend.Shared.Models;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CVBackend.Tests.Queries;
@@ -13,7 +15,21 @@ public class CompanyQueryTests : QueryTestBase
 
     public CompanyQueryTests()
     {
-        _companyQuery = new CompanyQuery(Context, NullLogger<CompanyQuery>.Instance);
+        _companyQuery = new CompanyQuery(Context, NullLogger<CompanyQuery>.Instance, Cache, Configuration);
+    }
+
+    private CompanyQuery CreateCompanyQueryWithCachingEnabled()
+    {
+        Dictionary<string, string?> configValues = new Dictionary<string, string?>
+        {
+            { "Cache:EnableCaching", "true" },
+            { "Cache:ExpirationMinutes", "10" }
+        };
+        IConfiguration cacheEnabledConfig = new ConfigurationBuilder()
+            .AddInMemoryCollection(configValues)
+            .Build();
+
+        return new CompanyQuery(Context, NullLogger<CompanyQuery>.Instance, Cache, cacheEnabledConfig);
     }
 
     [Fact]
@@ -135,5 +151,88 @@ public class CompanyQueryTests : QueryTestBase
         Assert.Equal("Gamma LLC", result.Name);
         Assert.NotNull(result.Projects);
         Assert.Empty(result.Projects);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithCachingEnabled_CachesResultsOnFirstCall()
+    {
+        CompanyQuery cachedQuery = CreateCompanyQueryWithCachingEnabled();
+        SeedCompanies();
+
+        List<Company> firstResult = await cachedQuery.GetAllAsync();
+        List<Company> secondResult = await cachedQuery.GetAllAsync();
+
+        Assert.NotNull(firstResult);
+        Assert.NotNull(secondResult);
+        Assert.Equal(3, firstResult.Count);
+        Assert.Equal(3, secondResult.Count);
+        Assert.Equal(firstResult[0].Name, secondResult[0].Name);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithCachingEnabled_ReturnsCachedDataOnSubsequentCalls()
+    {
+        CompanyQuery cachedQuery = CreateCompanyQueryWithCachingEnabled();
+        SeedCompanies();
+
+        List<Company> firstResult = await cachedQuery.GetAllAsync();
+
+        Context.Companies.Add(new Company
+        {
+            Id = Guid.NewGuid(),
+            Name = "Zeta Corp",
+            Position = "Developer",
+            StartDate = new DateTime(2024, 1, 1),
+            EndDate = null,
+            Description = "New company added after cache"
+        });
+        Context.SaveChanges();
+
+        List<Company> secondResult = await cachedQuery.GetAllAsync();
+
+        Assert.Equal(3, firstResult.Count);
+        Assert.Equal(3, secondResult.Count);
+    }
+
+    [Fact]
+    public async Task GetAllWithProjectsAsync_WithCachingEnabled_CachesResultsOnFirstCall()
+    {
+        CompanyQuery cachedQuery = CreateCompanyQueryWithCachingEnabled();
+        SeedProjects();
+
+        List<Company> firstResult = await cachedQuery.GetAllWithProjectsAsync();
+        List<Company> secondResult = await cachedQuery.GetAllWithProjectsAsync();
+
+        Assert.NotNull(firstResult);
+        Assert.NotNull(secondResult);
+        Assert.Equal(3, firstResult.Count);
+        Assert.Equal(3, secondResult.Count);
+        Assert.Equal(2, firstResult[0].Projects.Count);
+        Assert.Equal(2, secondResult[0].Projects.Count);
+    }
+
+    [Fact]
+    public async Task GetAllWithProjectsAsync_WithCachingEnabled_ReturnsCachedDataOnSubsequentCalls()
+    {
+        CompanyQuery cachedQuery = CreateCompanyQueryWithCachingEnabled();
+        SeedProjects();
+
+        List<Company> firstResult = await cachedQuery.GetAllWithProjectsAsync();
+
+        Context.Companies.Add(new Company
+        {
+            Id = Guid.NewGuid(),
+            Name = "Zeta Corp",
+            Position = "Developer",
+            StartDate = new DateTime(2024, 1, 1),
+            EndDate = null,
+            Description = "New company added after cache"
+        });
+        Context.SaveChanges();
+
+        List<Company> secondResult = await cachedQuery.GetAllWithProjectsAsync();
+
+        Assert.Equal(3, firstResult.Count);
+        Assert.Equal(3, secondResult.Count);
     }
 }
