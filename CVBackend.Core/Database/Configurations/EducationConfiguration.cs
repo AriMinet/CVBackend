@@ -17,14 +17,11 @@ public class EducationConfiguration : IEntityTypeConfiguration<Education>
     /// <param name="builder">The entity type builder.</param>
     public void Configure(EntityTypeBuilder<Education> builder)
     {
-        // Table mapping
         builder.ToTable("education");
 
-        // Primary key
         builder.HasKey(entity => entity.Id);
         builder.Property(entity => entity.Id).HasColumnName("id");
 
-        // Properties
         builder.Property(entity => entity.Institution)
             .HasColumnName("institution")
             .IsRequired()
@@ -33,7 +30,7 @@ public class EducationConfiguration : IEntityTypeConfiguration<Education>
         builder.Property(entity => entity.Degree)
             .HasColumnName("degree")
             .IsRequired()
-            .HasConversion<string>()  // Store enum as string in database
+            .HasConversion<string>()
             .HasMaxLength(200);
 
         builder.Property(entity => entity.Field)
@@ -51,7 +48,6 @@ public class EducationConfiguration : IEntityTypeConfiguration<Education>
         builder.Property(entity => entity.Description)
             .HasColumnName("description");
 
-        // Indexes
         builder.HasIndex(entity => entity.StartDate)
             .HasDatabaseName("idx_education_start_date");
 

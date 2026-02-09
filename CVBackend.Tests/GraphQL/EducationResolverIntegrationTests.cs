@@ -10,7 +10,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
     [Fact]
     public async Task AllEducation_ReturnsAllEducationEntries()
     {
-        // Arrange
         string query = @"
             query {
                 allEducation {
@@ -22,10 +21,8 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
                 }
             }";
 
-        // Act
         GraphQLResponse response = await ExecuteGraphQLAsync(query);
 
-        // Assert
         Assert.Null(response.Errors);
         Assert.NotNull(response.Data);
 
@@ -33,7 +30,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
         Assert.NotNull(educationArray);
         Assert.Equal(3, educationArray.Count);
 
-        // Verify first entry (ordered by institution: MIT)
         JToken firstEntry = educationArray[0];
         Assert.Equal("MIT", firstEntry["institution"]?.ToString());
         Assert.Equal("BACHELOR", firstEntry["degree"]?.ToString());
@@ -44,7 +40,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
     [Fact]
     public async Task Education_WhenEducationExists_ReturnsEducationById()
     {
-        // Arrange
         string query = @"
             query {
                 education(id: ""77777777-7777-7777-7777-777777777777"") {
@@ -56,10 +51,8 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
                 }
             }";
 
-        // Act
         GraphQLResponse response = await ExecuteGraphQLAsync(query);
 
-        // Assert
         Assert.Null(response.Errors);
         Assert.NotNull(response.Data);
 
@@ -74,7 +67,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
     [Fact]
     public async Task Education_WhenEducationDoesNotExist_ReturnsNull()
     {
-        // Arrange
         string query = @"
             query {
                 education(id: ""ffffffff-ffff-ffff-ffff-ffffffffffff"") {
@@ -83,10 +75,8 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
                 }
             }";
 
-        // Act
         GraphQLResponse response = await ExecuteGraphQLAsync(query);
 
-        // Assert
         Assert.Null(response.Errors);
         Assert.NotNull(response.Data);
 
@@ -97,7 +87,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
     [Fact]
     public async Task EducationByDegree_WhenDegreeExists_ReturnsMatchingEducation()
     {
-        // Arrange
         string query = @"
             query {
                 educationByDegree(degree: BACHELOR) {
@@ -108,10 +97,8 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
                 }
             }";
 
-        // Act
         GraphQLResponse response = await ExecuteGraphQLAsync(query);
 
-        // Assert
         Assert.Null(response.Errors);
         Assert.NotNull(response.Data);
 
@@ -128,7 +115,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
     [Fact]
     public async Task EducationByDegree_WhenDegreeHasNoEntries_ReturnsEmptyArray()
     {
-        // Arrange
         string query = @"
             query {
                 educationByDegree(degree: DOCTORATE) {
@@ -137,10 +123,8 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
                 }
             }";
 
-        // Act
         GraphQLResponse response = await ExecuteGraphQLAsync(query);
 
-        // Assert
         Assert.Null(response.Errors);
         Assert.NotNull(response.Data);
 
@@ -152,7 +136,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
     [Fact]
     public async Task EducationByInstitution_WhenInstitutionExists_ReturnsMatchingEducation()
     {
-        // Arrange
         string query = @"
             query {
                 educationByInstitution(institution: ""MIT"") {
@@ -163,10 +146,8 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
                 }
             }";
 
-        // Act
         GraphQLResponse response = await ExecuteGraphQLAsync(query);
 
-        // Assert
         Assert.Null(response.Errors);
         Assert.NotNull(response.Data);
 
@@ -182,7 +163,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
     [Fact]
     public async Task EducationByInstitution_WhenInstitutionDoesNotExist_ReturnsEmptyArray()
     {
-        // Arrange
         string query = @"
             query {
                 educationByInstitution(institution: ""Harvard"") {
@@ -191,10 +171,8 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
                 }
             }";
 
-        // Act
         GraphQLResponse response = await ExecuteGraphQLAsync(query);
 
-        // Assert
         Assert.Null(response.Errors);
         Assert.NotNull(response.Data);
 
@@ -206,7 +184,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
     [Fact]
     public async Task AllEducation_WithDateFields_ReturnsCorrectDates()
     {
-        // Arrange
         string query = @"
             query {
                 allEducation {
@@ -217,17 +194,14 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
                 }
             }";
 
-        // Act
         GraphQLResponse response = await ExecuteGraphQLAsync(query);
 
-        // Assert
         Assert.Null(response.Errors);
         Assert.NotNull(response.Data);
 
         JArray? educationArray = response.Data?["allEducation"] as JArray;
         Assert.NotNull(educationArray);
 
-        // Verify MIT dates
         JToken mitEntry = educationArray[0];
         Assert.Equal("MIT", mitEntry["institution"]?.ToString());
         Assert.Equal("2010-09-01", DateTime.Parse(mitEntry["startDate"]?.ToString() ?? string.Empty).ToString("yyyy-MM-dd"));
@@ -237,7 +211,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
     [Fact]
     public async Task AllEducation_VerifiesOrderingByInstitution()
     {
-        // Arrange
         string query = @"
             query {
                 allEducation {
@@ -246,10 +219,8 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
                 }
             }";
 
-        // Act
         GraphQLResponse response = await ExecuteGraphQLAsync(query);
 
-        // Assert
         Assert.Null(response.Errors);
         Assert.NotNull(response.Data);
 
@@ -257,7 +228,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
         Assert.NotNull(educationArray);
         Assert.Equal(3, educationArray.Count);
 
-        // Verify alphabetical ordering by institution
         Assert.Equal("MIT", educationArray[0]["institution"]?.ToString());
         Assert.Equal("Stanford University", educationArray[1]["institution"]?.ToString());
         Assert.Equal("Tech Academy", educationArray[2]["institution"]?.ToString());
@@ -266,7 +236,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
     [Fact]
     public async Task EducationByDegree_VerifiesAllDegreeTypes()
     {
-        // Arrange - Test MASTER degree
         string masterQuery = @"
             query {
                 educationByDegree(degree: MASTER) {
@@ -276,7 +245,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
                 }
             }";
 
-        // Arrange - Test CERTIFICATE degree
         string certificateQuery = @"
             query {
                 educationByDegree(degree: CERTIFICATE) {
@@ -286,11 +254,9 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
                 }
             }";
 
-        // Act
         GraphQLResponse masterResponse = await ExecuteGraphQLAsync(masterQuery);
         GraphQLResponse certificateResponse = await ExecuteGraphQLAsync(certificateQuery);
 
-        // Assert - Master
         Assert.Null(masterResponse.Errors);
         JArray? masterArray = masterResponse.Data?["educationByDegree"] as JArray;
         Assert.NotNull(masterArray);
@@ -298,7 +264,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
         Assert.Equal("Stanford University", masterArray[0]["institution"]?.ToString());
         Assert.Equal("MASTER", masterArray[0]["degree"]?.ToString());
 
-        // Assert - Certificate
         Assert.Null(certificateResponse.Errors);
         JArray? certificateArray = certificateResponse.Data?["educationByDegree"] as JArray;
         Assert.NotNull(certificateArray);
@@ -310,7 +275,6 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
     [Fact]
     public async Task AllEducationPaged_WithPagination_ReturnsConnectionWithEdgesAndNodes()
     {
-        // Arrange
         string query = @"
             query {
                 allEducationPaged(first: 2) {
@@ -336,17 +300,14 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
                 }
             }";
 
-        // Act
         GraphQLResponse response = await ExecuteGraphQLAsync(query);
 
-        // Assert
         Assert.Null(response.Errors);
         Assert.NotNull(response.Data);
 
         JToken? educationPaged = response.Data?["allEducationPaged"];
         Assert.NotNull(educationPaged);
 
-        // Verify edges
         JArray? edges = educationPaged["edges"] as JArray;
         Assert.NotNull(edges);
         Assert.Equal(2, edges.Count);
@@ -356,12 +317,10 @@ public class EducationResolverIntegrationTests : GraphQLTestBase
         Assert.NotNull(firstEdge["cursor"]);
         Assert.Equal("MIT", firstEdge["node"]?["institution"]?.ToString());
 
-        // Verify nodes
         JArray? nodes = educationPaged["nodes"] as JArray;
         Assert.NotNull(nodes);
         Assert.Equal(2, nodes.Count);
 
-        // Verify pageInfo
         JToken? pageInfo = educationPaged["pageInfo"];
         Assert.NotNull(pageInfo);
         Assert.True(pageInfo["hasNextPage"]?.Value<bool>());

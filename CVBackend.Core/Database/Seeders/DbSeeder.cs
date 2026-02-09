@@ -43,7 +43,6 @@ public class DbSeeder : IDbSeeder
     {
         try
         {
-            // Check if data already exists
             if (await IsSeededAsync(cancellationToken))
             {
                 _logger.LogInformation("Database already contains data. Skipping seeding.");
@@ -118,10 +117,8 @@ public class DbSeeder : IDbSeeder
             return;
         }
 
-        // Load all skills (already seeded)
         List<Skill> allSkills = await _context.Skills.ToListAsync(cancellationToken);
 
-        // Helper function to find skills by name
         List<Skill> FindSkills(params string[] skillNames)
         {
             return allSkills.Where(s => skillNames.Contains(s.Name)).ToList();

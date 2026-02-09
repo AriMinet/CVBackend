@@ -18,8 +18,6 @@ public class CvDbContextFactory : IDesignTimeDbContextFactory<CvDbContext>
     {
         DbContextOptionsBuilder<CvDbContext> optionsBuilder = new DbContextOptionsBuilder<CvDbContext>();
 
-        // Use a default connection string for migrations
-        // This will be overridden by appsettings.json at runtime
         string connectionString = "Host=localhost;Port=5432;Database=cvdatabase;Username=cvuser;Password=cvpassword";
 
         optionsBuilder.UseNpgsql(connectionString);

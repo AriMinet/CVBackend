@@ -17,14 +17,11 @@ public class SkillConfiguration : IEntityTypeConfiguration<Skill>
     /// <param name="builder">The entity type builder.</param>
     public void Configure(EntityTypeBuilder<Skill> builder)
     {
-        // Table mapping
         builder.ToTable("skills");
 
-        // Primary key
         builder.HasKey(entity => entity.Id);
         builder.Property(entity => entity.Id).HasColumnName("id");
 
-        // Properties
         builder.Property(entity => entity.Name)
             .HasColumnName("name")
             .IsRequired()
@@ -38,14 +35,13 @@ public class SkillConfiguration : IEntityTypeConfiguration<Skill>
         builder.Property(entity => entity.ProficiencyLevel)
             .HasColumnName("proficiency_level")
             .IsRequired()
-            .HasConversion<string>()  // Store enum as string in database
+            .HasConversion<string>()
             .HasMaxLength(50);
 
         builder.Property(entity => entity.YearsExperience)
             .HasColumnName("years_experience")
             .IsRequired();
 
-        // Indexes
         builder.HasIndex(entity => entity.Category)
             .HasDatabaseName("idx_skills_category");
 

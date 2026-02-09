@@ -39,9 +39,6 @@ public class CvDbContext(DbContextOptions<CvDbContext> options) : DbContext(opti
     {
         base.OnModelCreating(modelBuilder);
 
-        // Apply all entity configurations from the current assembly
-        // This automatically discovers and applies all IEntityTypeConfiguration<T> implementations
-        // Follows Open/Closed Principle - add new entities without modifying this method
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(CvDbContext).Assembly);
     }
 }

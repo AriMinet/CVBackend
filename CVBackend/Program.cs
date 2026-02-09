@@ -25,21 +25,24 @@ public class Program
         {
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-            // Add Serilog
-            builder.Host.UseSerilog((context, services, configuration) => configuration
-                .Enrich.FromLogContext()
-                .WriteTo.Console()
-                .WriteTo.File("logs/cvbackend-.log", rollingInterval: RollingInterval.Day));
+            builder.Host.UseSerilog((context, services, configuration) =>
+            {
+                string logFilePath = context.Configuration.GetValue<string>("Serilog:FilePath") ?? "logs/cvbackend-.log";
+                string rollingIntervalString = context.Configuration.GetValue<string>("Serilog:RollingInterval") ?? "Day";
+                RollingInterval rollingInterval = Enum.Parse<RollingInterval>(rollingIntervalString, ignoreCase: true);
+
+                configuration
+                    .Enrich.FromLogContext()
+                    .WriteTo.Console()
+                    .WriteTo.File(logFilePath, rollingInterval: rollingInterval);
+            });
 
             ConfigureServices(builder.Services, builder.Configuration, builder.Environment);
 
             WebApplication app = builder.Build();
 
-            // Skip database initialization in Test environment
             if (app.Environment.EnvironmentName != "Test")
-            {
                 await InitializeDatabaseAsync(app.Services);
-            }
 
             ConfigureMiddleware(app);
 
@@ -47,8 +50,12 @@ public class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Application terminated unexpectedly: {ex}");
+            Log.Fatal(ex, "Application terminated unexpectedly");
             throw;
+        }
+        finally
+        {
+            await Log.CloseAndFlushAsync();
         }
     }
 
@@ -61,15 +68,10 @@ public class Program
     /// <param name="environment">The web host environment.</param>
     private static void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
     {
-        // Add CVBackend core services (DbContext, Seeder, GraphQL)
-        // Use InMemory database for Test environment
         bool useInMemoryDatabase = environment.EnvironmentName == "Test";
         services.AddCVBackendServices(configuration, useInMemoryDatabase);
 
-        // Add CORS with configuration
         services.AddCVBackendCors(configuration);
-
-        // Add rate limiting
         bool enableRateLimiting = configuration.GetValue<bool>("RateLimit:EnableRateLimiting");
         if (enableRateLimiting)
         {
@@ -93,7 +95,6 @@ public class Program
             });
         }
 
-        // Add enhanced health checks
         services.AddHealthChecks()
             .AddDbContextCheck<CvDbContext>("database");
     }
@@ -109,19 +110,15 @@ public class Program
 
         CvDbContext context = scope.ServiceProvider.GetRequiredService<CvDbContext>();
 
-        // Only run migrations if not using InMemory database (for testing)
         bool isInMemory = context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory";
-        if (!isInMemory)
-        {
-            await context.Database.MigrateAsync();
-        }
 
-        // Seed data using injected seeder (only if not in test environment)
+        if (!isInMemory)
+            await context.Database.MigrateAsync();
+
         IDbSeeder? seeder = scope.ServiceProvider.GetService<IDbSeeder>();
+
         if (seeder != null)
-        {
             await seeder.SeedAsync();
-        }
     }
 
     /// <summary>
@@ -131,10 +128,8 @@ public class Program
     /// <param name="app">The web application.</param>
     private static void ConfigureMiddleware(WebApplication app)
     {
-        // Add Serilog request logging
         app.UseSerilogRequestLogging();
 
-        // Global exception handler
         app.UseExceptionHandler(errorApp =>
         {
             errorApp.Run(async context =>
@@ -143,9 +138,7 @@ public class Program
                 Exception? exception = exceptionHandler?.Error;
 
                 if (exception != null)
-                {
                     Log.Error(exception, "Unhandled exception occurred");
-                }
 
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 context.Response.ContentType = "application/json";
@@ -158,20 +151,13 @@ public class Program
             });
         });
 
-        // Enable CORS
         app.UseCors();
 
-        // Enable rate limiting (if configured)
         if (app.Configuration.GetValue<bool>("RateLimit:EnableRateLimiting"))
-        {
             app.UseRateLimiter();
-        }
 
-        // Map GraphQL endpoint with Banana Cake Pop UI (HotChocolate)
-        // Uses resolver classes with query interfaces (SOLID architecture)
         app.MapGraphQL("/graphql");
 
-        // Map enhanced health check endpoint
         app.MapHealthChecks("/health");
     }
 }

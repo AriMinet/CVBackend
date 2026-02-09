@@ -3,6 +3,8 @@ using CVBackend.Shared.Models;
 using CVBackend.Shared.Models.Enums;
 using CVBackend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CVBackend.Tests.Queries;
 
@@ -12,6 +14,7 @@ namespace CVBackend.Tests.Queries;
 public abstract class QueryTestBase : IDisposable
 {
     protected CvDbContext Context { get; }
+    protected ILoggerFactory LoggerFactory { get; }
 
     protected QueryTestBase()
     {
@@ -20,6 +23,7 @@ public abstract class QueryTestBase : IDisposable
             .Options;
 
         Context = new CvDbContext(options);
+        LoggerFactory = NullLoggerFactory.Instance;
     }
 
     /// <summary>
@@ -37,10 +41,9 @@ public abstract class QueryTestBase : IDisposable
     /// </summary>
     protected void SeedProjects()
     {
-        SeedCompanies(); // Projects need companies
-        SeedSkills(); // Projects need skills to link
+        SeedCompanies();
+        SeedSkills();
 
-        // Load skills from database
         List<Skill> allSkills = Context.Skills.ToList();
 
         List<Project> projects = TestDataSeeder.CreateProjects(allSkills);

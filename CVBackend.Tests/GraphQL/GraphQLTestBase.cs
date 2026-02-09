@@ -27,7 +27,6 @@ public abstract class GraphQLTestBase : IDisposable
 
         Client = Factory.CreateClient();
 
-        // Seed test data AFTER the factory is created
         using IServiceScope scope = Factory.Services.CreateScope();
         CvDbContext context = scope.ServiceProvider.GetRequiredService<CvDbContext>();
         SeedTestData(context);
@@ -67,7 +66,6 @@ public abstract class GraphQLTestBase : IDisposable
 
         string responseBody = await response.Content.ReadAsStringAsync();
 
-        // Don't throw on HTTP errors - GraphQL returns errors in the response body
         if (!response.IsSuccessStatusCode)
         {
             throw new InvalidOperationException($"GraphQL request failed with status {response.StatusCode}. Response: {responseBody}");
@@ -103,7 +101,6 @@ public abstract class GraphQLTestBase : IDisposable
     /// </summary>
     protected void SeedProjects(CvDbContext context)
     {
-        // Load skills from database
         List<Skill> allSkills = context.Skills.ToList();
 
         List<Project> projects = TestDataSeeder.CreateProjects(allSkills);
@@ -167,13 +164,10 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        // Set environment to Test - Program.cs will automatically use InMemory database
         builder.UseEnvironment("Test");
 
-        // Configure to use a shared database name for this factory instance
         builder.ConfigureServices(services =>
         {
-            // Remove the default DbContext registration
             ServiceDescriptor? descriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<CvDbContext>));
 
@@ -182,7 +176,6 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 services.Remove(descriptor);
             }
 
-            // Add DbContext with a shared database name for this test
             services.AddDbContext<CvDbContext>(options =>
             {
                 options.UseInMemoryDatabase(databaseName: DatabaseName);

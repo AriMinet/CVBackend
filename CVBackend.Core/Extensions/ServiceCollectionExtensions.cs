@@ -27,7 +27,6 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration,
         bool useInMemoryDatabase = false)
     {
-        // Add database context - conditionally choose provider
         if (useInMemoryDatabase)
         {
             services.AddDbContext<CvDbContext>(options =>
@@ -47,17 +46,14 @@ public static class ServiceCollectionExtensions
                 string? connectionString = configuration.GetConnectionString("DefaultConnection");
                 options.UseNpgsql(connectionString, npgsqlOptions =>
                 {
-                    // Connection resilience
                     npgsqlOptions.EnableRetryOnFailure(
                         maxRetryCount: 3,
                         maxRetryDelay: TimeSpan.FromSeconds(5),
                         errorCodesToAdd: null);
 
-                    // Command timeout
                     npgsqlOptions.CommandTimeout(30);
                 });
 
-                // Enable sensitive data logging only in development/test
                 if (isDevelopment)
                 {
                     options.EnableSensitiveDataLogging();
@@ -66,17 +62,13 @@ public static class ServiceCollectionExtensions
             });
         }
 
-        // Register database seeder
         services.AddScoped<IDbSeeder, DbSeeder>();
 
-        // Register query interfaces with implementations
-        // Follows Dependency Inversion Principle (DIP) - register abstractions
         services.AddScoped<ICompanyQuery, CompanyQuery>();
         services.AddScoped<IProjectQuery, ProjectQuery>();
         services.AddScoped<IEducationQuery, EducationQuery>();
         services.AddScoped<ISkillQuery, SkillQuery>();
 
-        // Add HotChocolate GraphQL server
         services
             .AddGraphQLServer()
             .AddQueryType(d => d.Name("Query"))
@@ -113,7 +105,6 @@ public static class ServiceCollectionExtensions
                 }
                 else
                 {
-                    // Fallback to allow any origin if not configured (for backwards compatibility)
                     policy.AllowAnyOrigin()
                           .AllowAnyMethod()
                           .AllowAnyHeader();

@@ -16,14 +16,11 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
     /// <param name="builder">The entity type builder.</param>
     public void Configure(EntityTypeBuilder<Project> builder)
     {
-        // Table mapping
         builder.ToTable("projects");
 
-        // Primary key
         builder.HasKey(entity => entity.Id);
         builder.Property(entity => entity.Id).HasColumnName("id");
 
-        // Properties
         builder.Property(entity => entity.Name)
             .HasColumnName("name")
             .IsRequired()
@@ -45,8 +42,6 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.Property(entity => entity.EndDate)
             .HasColumnName("end_date");
 
-        // Relationships
-        // Many-to-many relationship with Skills
         builder.HasMany(project => project.Skills)
             .WithMany(skill => skill.Projects)
             .UsingEntity(joinEntity =>
@@ -54,7 +49,6 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
                 joinEntity.ToTable("project_skills");
             });
 
-        // Indexes
         builder.HasIndex(entity => entity.CompanyId)
             .HasDatabaseName("idx_projects_company_id");
 

@@ -16,14 +16,11 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
     /// <param name="builder">The entity type builder.</param>
     public void Configure(EntityTypeBuilder<Company> builder)
     {
-        // Table mapping
         builder.ToTable("companies");
 
-        // Primary key
         builder.HasKey(entity => entity.Id);
         builder.Property(entity => entity.Id).HasColumnName("id");
 
-        // Properties
         builder.Property(entity => entity.Name)
             .HasColumnName("name")
             .IsRequired()
@@ -44,14 +41,11 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.Property(entity => entity.Description)
             .HasColumnName("description");
 
-        // Relationships
-        // Configure one-to-many relationship between Company and Projects
         builder.HasMany(company => company.Projects)
             .WithOne(project => project.Company)
             .HasForeignKey(project => project.CompanyId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // Indexes
         builder.HasIndex(entity => entity.StartDate)
             .HasDatabaseName("idx_companies_start_date");
 
