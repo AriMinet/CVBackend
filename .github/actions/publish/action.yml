@@ -1,0 +1,51 @@
+name: 'Publish Application'
+description: 'Publish .NET application and upload artifacts'
+
+inputs:
+  configuration:
+    description: 'Build configuration (Debug or Release)'
+    required: false
+    default: 'Release'
+  project-path:
+    description: 'Path to the project file'
+    required: true
+  output-path:
+    description: 'Output directory for published files'
+    required: false
+    default: './publish'
+  artifact-name:
+    description: 'Name for the uploaded artifact'
+    required: false
+    default: 'production-build'
+  retention-days:
+    description: 'Number of days to retain artifacts'
+    required: false
+    default: '7'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Build for production
+      shell: bash
+      run: dotnet build --configuration ${{ inputs.configuration }}
+
+    - name: Publish application
+      shell: bash
+      run: dotnet publish ${{ inputs.project-path }} --configuration ${{ inputs.configuration }} --output ${{ inputs.output-path }} --no-build
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v6
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.output-path }}
+        retention-days: ${{ inputs.retention-days }}
+
+    - name: Display publish info
+      shell: bash
+      run: |
+        echo "## Publish Complete :package:" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Configuration:** ${{ inputs.configuration }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Output Path:** ${{ inputs.output-path }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Artifact Name:** ${{ inputs.artifact-name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Retention:** ${{ inputs.retention-days }} days" >> $GITHUB_STEP_SUMMARY

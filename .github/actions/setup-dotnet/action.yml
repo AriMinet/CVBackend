@@ -1,0 +1,28 @@
+name: 'Setup .NET with Cache'
+description: 'Setup .NET and restore dependencies with NuGet package caching'
+
+inputs:
+  dotnet-version:
+    description: '.NET SDK version to use'
+    required: true
+    default: '9.0.x'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v5
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      shell: bash
+      run: dotnet restore

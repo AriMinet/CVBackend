@@ -1,0 +1,26 @@
+name: 'Build Solution'
+description: 'Build .NET solution with caching'
+
+inputs:
+  configuration:
+    description: 'Build configuration (Debug or Release)'
+    required: false
+    default: 'Release'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Cache build output
+      uses: actions/cache@v5
+      with:
+        path: |
+          **/bin
+          **/obj
+        key: ${{ runner.os }}-build-${{ inputs.configuration }}-${{ hashFiles('**/*.csproj', '**/*.cs') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ inputs.configuration }}-
+          ${{ runner.os }}-build-
+
+    - name: Build solution
+      shell: bash
+      run: dotnet build --configuration ${{ inputs.configuration }} --no-restore

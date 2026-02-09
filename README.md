@@ -22,6 +22,7 @@ dotnet run --project CVBackend/CVBackend.csproj
 ### Testing
 ```bash
 dotnet test              # Run all tests
+dotnet test --collect:"XPlat Code Coverage"  # Run with coverage
 ```
 
 ---
@@ -30,7 +31,7 @@ dotnet test              # Run all tests
 
 | Service | URL |
 |---------|-----|
-| **GraphQL Playground** | http://localhost:5000/graphql |
+| **GraphQL Playground (BananaCakePop)** | http://localhost:5000/graphql |
 | **Health Check** | http://localhost:5000/health |
 | **PostgreSQL** | localhost:5433 |
 

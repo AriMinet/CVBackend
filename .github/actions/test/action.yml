@@ -1,0 +1,32 @@
+name: 'Run Tests'
+description: 'Run .NET tests and upload results'
+
+inputs:
+  configuration:
+    description: 'Build configuration (Debug or Release)'
+    required: false
+    default: 'Release'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run tests
+      shell: bash
+      run: dotnet test --configuration ${{ inputs.configuration }} --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: test-results-${{ runner.os }}
+        path: '**/TestResults/*.trx'
+        retention-days: 30
+
+    - name: Test summary
+      shell: bash
+      run: |
+        echo "## Test Results :rocket:" >> $GITHUB_STEP_SUMMARY
+        echo "All tests passed successfully!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Build Configuration:** ${{ inputs.configuration }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Runner OS:** ${{ runner.os }}" >> $GITHUB_STEP_SUMMARY
