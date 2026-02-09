@@ -1,0 +1,191 @@
+@CVBackend_HostAddress = http://localhost:5000
+
+### Health Check
+GET {{CVBackend_HostAddress}}/health
+Accept: application/json
+
+###
+
+### GraphQL - Get All Companies
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "{ companies { id name position startDate endDate description } }"
+}
+
+###
+
+### GraphQL - Get Single Company by ID
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetCompany($id: UUID!) { company(id: $id) { id name position startDate endDate description } }",
+  "variables": {
+    "id": "93f4aa3f-9808-4c58-b11d-e30dda4172fb"
+  }
+}
+
+###
+
+### GraphQL - Get Companies with Projects
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "{ companiesWithProjects { id name position startDate endDate description projects { id name description technologies startDate endDate } } }"
+}
+
+###
+
+### GraphQL - Get All Skills
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "{ skills { id name category proficiencyLevel yearsExperience } }"
+}
+
+###
+
+### GraphQL - Get Skills by Category
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetSkillsByCategory($category: String!) { skillsByCategory(category: $category) { id name category proficiencyLevel yearsExperience } }",
+  "variables": {
+    "category": "Backend"
+  }
+}
+
+###
+
+### GraphQL - Get Skills by Proficiency Level
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetSkillsByProficiency($level: Enum_ProficiencyLevel!) { skillsByProficiency(proficiencyLevel: $level) { id name category proficiencyLevel yearsExperience } }",
+  "variables": {
+    "level": "EXPERT"
+  }
+}
+
+###
+
+### GraphQL - Get Skills with Projects
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "{ skillsWithProjects { id name category proficiencyLevel projects { id name description } } }"
+}
+
+###
+
+### GraphQL - Get All Education
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "{ education { id institution degree field startDate endDate description } }"
+}
+
+###
+
+### GraphQL - Get Education by ID
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetEducationById($id: UUID!) { educationById(id: $id) { id institution degree field startDate endDate description } }",
+  "variables": {
+    "id": "db3b9028-4d20-42ea-ac1c-7edbf6e46454"
+  }
+}
+
+###
+
+### GraphQL - Get Education by Degree Type
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetEducationByDegree($degree: Enum_DegreeType!) { educationByDegree(degreeType: $degree) { id institution degree field startDate endDate description } }",
+  "variables": {
+    "degree": "BACHELOR"
+  }
+}
+
+###
+
+### GraphQL - Get Education by Institution
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetEducationByInstitution($institution: String!) { educationByInstitution(institution: $institution) { id institution degree field startDate endDate description } }",
+  "variables": {
+    "institution": "University of Technology"
+  }
+}
+
+###
+
+### GraphQL - Get All Projects
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "{ projects { id name description technologies startDate endDate } }"
+}
+
+###
+
+### GraphQL - Get Single Project by ID
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetProject($id: UUID!) { project(id: $id) { id name description technologies startDate endDate } }",
+  "variables": {
+    "id": "a02569df-249c-4a16-80e1-abae5dfb6987"
+  }
+}
+
+###
+
+### GraphQL - Get Projects with Relations (Company + Skills)
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "{ projectsWithRelations { id name description technologies startDate endDate company { id name position } skills { id name category proficiencyLevel } } }"
+}
+
+###
+
+### GraphQL - Get Projects by Company ID
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetProjectsByCompany($companyId: UUID!) { projectsByCompany(companyId: $companyId) { id name description technologies startDate endDate } }",
+  "variables": {
+    "companyId": "93f4aa3f-9808-4c58-b11d-e30dda4172fb"
+  }
+}
+
+###
+
+### GraphQL - Introspection (List all queries)
+POST {{CVBackend_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "{ __schema { queryType { name fields { name description args { name type { name kind ofType { name kind } } } type { name kind } } } } }"
+}
+
+###

@@ -1,0 +1,49 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:17
+    container_name: cvbackend_postgres
+    environment:
+      POSTGRES_USER: cvuser
+      POSTGRES_PASSWORD: cvpassword
+      POSTGRES_DB: cvdatabase
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres-config/pg_hba.conf:/pg_hba.conf
+    command: >
+      postgres -c hba_file=/pg_hba.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cvuser -d cvdatabase"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cvbackend_network
+
+  # ASP.NET Core API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cvbackend_api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=cvdatabase;Username=cvuser;Password=cvpassword"
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:5000
+    ports:
+      - "5000:5000"
+    networks:
+      - cvbackend_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  cvbackend_network:
+    driver: bridge
